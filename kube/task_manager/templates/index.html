@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    <!-- Importation de Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Variables de Couleurs */
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #f4f4f4;
+            --accent-color: #ff9800;
+            --text-color: #333;
+            --background-color: #fafafa;
+            --button-color: #4CAF50;
+            --button-hover-color: #45a049;
+            --delete-button-color: #f44336;
+            --delete-button-hover-color: #e53935;
+            --complete-button-color: #2196F3;
+            --complete-button-hover-color: #1e88e5;
+        }
+
+        /* Style Global */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        /* Conteneur Principal */
+        .container {
+            width: 90%;
+            max-width: 800px;
+            background-color: white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            padding: 20px 30px;
+            margin: 20px 0;
+        }
+
+        /* En-tête */
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+
+        /* Liste des Tâches */
+        #task-list {
+            margin-bottom: 30px;
+        }
+
+        .task {
+            background-color: var(--secondary-color);
+            border-left: 5px solid var(--primary-color);
+            padding: 15px 20px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            transition: background-color 0.3s, box-shadow 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .task:hover {
+            background-color: #e8f5e9;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .task.completed {
+            background-color: #e0e0e0;
+            text-decoration: line-through;
+            border-left-color: var(--accent-color);
+        }
+
+        .task-details {
+            flex-grow: 1;
+        }
+
+        .task h3 {
+            margin: 0 0 5px 0;
+            font-size: 1.2em;
+            color: var(--primary-color);
+        }
+
+        .task p {
+            margin: 0;
+            color: var(--text-color);
+        }
+
+        /* Boutons */
+        .task-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        .complete-btn {
+            background-color: var(--complete-button-color);
+            color: white;
+        }
+
+        .complete-btn:hover {
+            background-color: var(--complete-button-hover-color);
+        }
+
+        .delete-btn {
+            background-color: var(--delete-button-color);
+            color: white;
+        }
+
+        .delete-btn:hover {
+            background-color: var(--delete-button-hover-color);
+        }
+
+        /* Formulaire d'Ajout de Tâche */
+        h2 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: vertical;
+            font-size: 1em;
+        }
+
+        button.add-btn {
+            background-color: var(--button-color);
+            color: white;
+            padding: 10px 20px;
+            font-size: 1em;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        button.add-btn:hover {
+            background-color: var(--button-hover-color);
+            transform: translateY(-2px);
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .task {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .task-buttons {
+                margin-top: 10px;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>My Task Manager</h1>
+        <div id="task-list"></div>
+        <hr>
+        <h2>Add Task</h2>
+        <input type="text" id="title" placeholder="Task Title" required>
+        <textarea id="description" placeholder="Task Description"></textarea>
+        <button class="add-btn" onclick="addTask()">Add Task</button>
+
+        <script>
+            const apiBaseUrl = '/api/tasks';
+
+            // Fetch and display tasks
+            function fetchTasks() {
+                fetch(apiBaseUrl)
+                    .then(response => response.json())
+                    .then(tasks => {
+                        const taskList = document.getElementById('task-list');
+                        taskList.innerHTML = '';
+                        tasks.forEach(task => {
+                            taskList.innerHTML += `
+                                <div class="task ${task.done ? 'completed' : ''}">
+                                    <div class="task-details">
+                                        <h3>${task.title}</h3>
+                                        <p>${task.description}</p>
+                                    </div>
+                                    <div class="task-buttons">
+                                        <button class="complete-btn" onclick="toggleComplete(${task.id}, ${task.done})">
+                                            ${task.done ? 'Mark Incomplete' : 'Mark Complete'}
+                                        </button>
+                                        <button class="delete-btn" onclick="deleteTask(${task.id})">Delete</button>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    });
+            }
+
+            // Add a new task
+            function addTask() {
+                const title = document.getElementById('title').value.trim();
+                const description = document.getElementById('description').value.trim();
+
+                if (title === "") {
+                    alert("Le titre de la tâche est requis.");
+                    return;
+                }
+
+                fetch(apiBaseUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, description })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erreur lors de l\'ajout de la tâche.');
+                    }
+                    return response.json();
+                })
+                .then(() => {
+                    document.getElementById('title').value = '';
+                    document.getElementById('description').value = '';
+                    fetchTasks();
+                })
+                .catch(error => {
+                    console.error(error);
+                    alert("Impossible d'ajouter la tâche.");
+                });
+            }
+
+            // Toggle task completion status
+            function toggleComplete(taskId, currentStatus) {
+                fetch(`${apiBaseUrl}/${taskId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ done: !currentStatus })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erreur lors de la mise à jour de la tâche.');
+                    }
+                    return response.json();
+                })
+                .then(() => fetchTasks())
+                .catch(error => {
+                    console.error(error);
+                    alert("Impossible de mettre à jour la tâche.");
+                });
+            }
+
+            // Delete a task
+            function deleteTask(taskId) {
+                if (!confirm("Êtes-vous sûr de vouloir supprimer cette tâche ?")) {
+                    return;
+                }
+
+                fetch(`${apiBaseUrl}/${taskId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erreur lors de la suppression de la tâche.');
+                    }
+                    return response.json();
+                })
+                .then(() => fetchTasks())
+                .catch(error => {
+                    console.error(error);
+                    alert("Impossible de supprimer la tâche.");
+                });
+            }
+
+            // Initial fetch of tasks
+            fetchTasks();
+        </script>
+    </div>
+</body>
+</html>
